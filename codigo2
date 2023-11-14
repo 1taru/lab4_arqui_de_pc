@@ -1,0 +1,82 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+entity contador is
+    Port ( 
+        reloj : in std_logic;
+        reset : in std_logic;
+        habent : in std_logic;
+        habsal : out std_logic;
+        cuentamax: in std_logic_vector (3 downto 0);
+        selec: in std_logic_vector (1 downto 0);
+        display1: out std_logic_vector (6 downto 0);
+        display2: out std_logic_vector (6 downto 0)
+    );
+end contador;
+
+architecture Behavioral of contador is
+    signal clock : std_logic;
+    signal count : std_logic_vector (7 downto 0);
+
+begin
+    -- Proceso para generar un pulso de reloj a partir de tu reloj
+    process(reloj)
+    variable conta : integer range 0 to 50000000 := 0;
+    begin
+        if reloj = '1' and reloj'event then
+            if conta = 50000000 then
+                conta := 0;
+                clock <= '1';
+            else
+                conta := conta + 1;
+                clock <= '0';
+            end if;
+        end if;
+    end process;
+
+    -- Proceso para el contador
+    process (reset, clock, habent)
+    variable cuenta : std_logic_vector (3 downto 0) := "0000";
+    begin
+        if reset = '1' then
+            count <= "00000000";
+        elsif clock = '1' and clock'event then
+            if habent = '0' then
+                if cuenta = cuentamax then
+                    cuenta := "0000";
+                else
+                    cuenta := cuenta + 1;
+                end if;
+            end if;
+            count <= cuenta & cuenta;
+        end if;
+    end process;
+
+    -- Proceso para la asignación de displays
+    process (count, selec)
+    begin
+        case selec is
+            when "00" =>
+                display1 <= count(7 downto 4);
+                display2 <= count(3 downto 0);
+            when "01" =>
+                display1 <= (others => 'Z'); -- Apagar display1
+                display2 <= count(3 downto 0);
+            when others =>
+                display1 <= (others => 'Z'); -- Apagar ambos displays
+                display2 <= (others => 'Z');
+        end case;
+    end process;
+
+    -- Proceso para la habilitación de salida
+    process (count, habent, clock)
+    begin
+        if count = "9999" and habent = '0' and clock = '1' then
+            habsal <= '0';
+        else
+            habsal <= '1';
+        end if;
+    end process;
+end Behavioral;
